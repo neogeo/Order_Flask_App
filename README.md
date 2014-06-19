@@ -4,8 +4,8 @@ Features:
 nothing yet...
 
 To run:
->> python db_create.py
->> python run.py
+"python db_create.py"
+"python run.py"
 
 
 
