@@ -83,35 +83,30 @@ def createProductType():
 	return jsonify(formatProductTypeForResponse(productType)), 201
 
 '''
-update a productType, only update the inventory or price for now
-inventory - optional - inventory to ADD
+update a ProductType, only update the inventory or price
+inventory - optional - inventory amount (this does affect line items that have already been ordered)
 price - optional - new price
 
 {
-	id:2,
-	inventory:20,
-	price:$20.00
+	"inventory":"20",
+	"price":"$20.00"
 }
 '''
-@app.route('/productType', methods=['PUT'])
 @app.route('/productType/<id>', methods=['PUT'])
-def updateProductType(id=None):
+def updateProductType(id):
 	#parse json
 	requestJson = request.get_json(force=True)
 	#validate params
-	prod_id = id if id else requestJson.get('id') #get the id from the URL or body
 	inventory = requestJson.get('inventory')
 	price = requestJson.get('price')
-	if not prod_id:
-		return jsonify(error="Required data not set, specify id in URL or body"), 400
 
-	productType = models.ProductType.query.get(prod_id)
+	productType = models.ProductType.query.get(id)
 	#update
 	if productType:
 		try:
 			if productType and inventory:
 				#increase inventory by given amount
-				productType.inventory += int(inventory)
+				productType.inventory = int(inventory)
 
 			if productType and price:
 				#set new price
