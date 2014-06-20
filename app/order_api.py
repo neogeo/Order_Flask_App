@@ -112,6 +112,29 @@ def createOrder():
 
 	return jsonify(formatOrderForResponse(order, lines)), 201
 
+'''
+delete an order:
+/order/id
+'''
+@app.route('/order/<id>', methods=['DELETE'])
+def deleteOrder(id):
+	order = models.Order.query.get(id)
+
+	if order:
+		#delete
+		#each assicated product
+		for product in order.products:
+			db.session.delete(product)
+			
+		db.session.delete(order)
+		try:
+			db.session.commit()
+			return jsonify(id=id), 200
+		except exc.SQLAlchemyError as err:
+			pass
+
+	return jsonify(error="Failed to delete order"), 400
+
 #format a Order model for a response from the API
 def formatOrderForResponse(order, lines):
 	shippingAddress = {
