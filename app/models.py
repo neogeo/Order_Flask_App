@@ -26,21 +26,24 @@ class Order(db.Model):
         self.billing_zipcode = billing_zipcode
 
     def setShippingAndBillingAddress(self, shippingAddress, billingAddress, sameBillingAddress="false"):
-		self.shipping_street = shippingAddress.get('street')
-		self.shipping_state = shippingAddress.get('city')
-		self.shipping_city = shippingAddress.get('state')
-		self.shipping_zipcode = shippingAddress.get('zip')
+        self.setShippingAddress(shippingAddress)
+        
+        if sameBillingAddress == "true":
+            self.setBillingAddress(shippingAddress)
+        else:
+            self.setBillingAddress(billingAddress)
 
-		if sameBillingAddress == "true":
-			self.billing_street = self.shipping_street
-			self.billing_state = self.shipping_state
-			self.billing_city = self.shipping_city
-			self.billing_zipcode = self.shipping_zipcode
-		else:
-			self.billing_street = billingAddress.get('street')
-			self.billing_state = billingAddress.get('city')
-			self.billing_city = billingAddress.get('state')
-			self.billing_zipcode = billingAddress.get('zip')
+    def setShippingAddress(self, shippingAddress):
+        self.shipping_street = shippingAddress.get('street')
+        self.shipping_state = shippingAddress.get('city')
+        self.shipping_city = shippingAddress.get('state')
+        self.shipping_zipcode = shippingAddress.get('zip')
+
+    def setBillingAddress(self, billingAddress):
+        self.billing_street = billingAddress.get('street')
+        self.billing_state = billingAddress.get('city')
+        self.billing_city = billingAddress.get('state')
+        self.billing_zipcode = billingAddress.get('zip')
 
     def __repr__(self):
         return '<Order %r>' % (self.total)

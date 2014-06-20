@@ -142,6 +142,51 @@ def createOrder():
 	return jsonify(formatOrderForResponse(order, lines)), 201
 
 '''
+Update an orders shipping or billing address. Use the /order/<id>/lineItem endpoint to update the line items
+request:
+{
+	"shippingAddress" : {
+		"street" : "6th",
+		"city" : "Austin",
+		"state" : "Texas",
+		"zip" : "777777"
+	},
+	"billingAddress" : {
+		"street" : "6th",
+		"city" : "Austin",
+		"state" : "Texas",
+		"zip" : "777777"
+   	}
+}
+'''
+@app.route('/order/<id>', methods=['PUT'])
+def updateOrder(id):
+	#parse json
+	requestJson = request.get_json(force=True)
+	#validate params
+	shippingAddress = requestJson.get('shippingAddress')
+	billingAddress = requestJson.get('billingAddress')
+
+	order = models.Order.query.get(id)
+	#update
+	if order:
+		try:
+			if order and shippingAddress:
+				order.setShippingAddress(shippingAddress)
+
+			if order and billingAddress:
+				order.setBillingAddress(billingAddress)
+		
+			db.session.commit()
+		except exc.SQLAlchemyError as err:
+			return jsonify(error="Failed to update Order"), 400
+
+		#return result of any updates
+		return jsonify(formatOrderForGetResponse(order)), 200
+	else:
+		return jsonify(error="Failed to find given Order"), 400
+
+'''
 delete an order:
 /order/id
 '''
