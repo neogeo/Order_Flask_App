@@ -10,6 +10,35 @@ from app import db, models, helpers
    ---------------------------------------------'''
 
 '''
+return all orders, (becuase this could be slow for very large data sets, use the 'limit' query param)
+limit - optional query param - limit the amount of results returned
+/order?limit=10
+'''
+@app.route('/order', methods=['GET'])
+def getAllOrders():
+	limit = request.args.get('limit')
+	if limit:
+		#limit results
+		orders = models.Order.query.limit(limit).all()	
+	else:
+		#return all
+		orders = models.Order.query.all()
+
+	return jsonify(data = map(formatOrderForGetResponse, orders)), 200
+
+'''
+return an Order by id
+'''
+@app.route('/order/<id>', methods=['GET'])
+def getOrder(id):
+	order = models.Order.query.get(id)
+	if order:
+		return jsonify(formatOrderForGetResponse(order)), 200
+	else:
+		return jsonify(error="Could not find Order"), 400
+
+
+'''
 Create an order. Returns the id, total and price per sku; along with the given information 
 lines - required - at least 1 sku is required. 
 				   The sku of a given Product must already exist, and there must also be available inventory of that sku remaing
@@ -125,7 +154,7 @@ def deleteOrder(id):
 		#each assicated product
 		for product in order.products:
 			db.session.delete(product)
-			
+
 		db.session.delete(order)
 		try:
 			db.session.commit()
@@ -157,3 +186,32 @@ def formatOrderForResponse(order, lines):
 		'billingAddress':billingAddress,
 		'lines': lines
 	}
+
+#format a Order model for a response from the API
+def formatOrderForGetResponse(order):
+	shippingAddress = {
+		'street' : order.shipping_street,
+		'city' : order.shipping_state,
+		'state' : order.shipping_city,
+		'zip' : order.shipping_zipcode
+	}
+	billingAddress = {
+		'street' : order.billing_street,
+		'city' : order.billing_state,
+		'state' : order.billing_city,
+		'zip' : order.billing_zipcode
+	}
+	lines = map(formatProductForResponse, order.products)
+	return { 
+		'id':order.id, 
+		'total':helpers.convertIntToFormattedPrice(order.total),
+		'shippingAddress':shippingAddress,
+		'billingAddress':billingAddress,
+		'lines': lines
+	}
+
+def formatProductForResponse(product):
+	productType = models.ProductType.query.get(product.product_type_id)
+	
+	price = helpers.convertIntToFormattedPrice( productType.price )
+	return { 'quantity':product.quantity, 'price':price, 'sku':productType.sku}

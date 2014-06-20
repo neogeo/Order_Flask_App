@@ -15,7 +15,7 @@ limit - optional query param - limit the amount of results returned
 /productType?limit=10
 '''
 @app.route('/productType', methods=['GET'])
-def getProductType():
+def getAllProductTypes():
 	limit = request.args.get('limit')
 	if limit:
 		#limit results
@@ -26,6 +26,16 @@ def getProductType():
 
 	return jsonify(data = map(formatProductTypeForResponse, productTypes)), 200
 
+'''
+return an ProductType by id
+'''
+@app.route('/productType/<id>', methods=['GET'])
+def getProductType(id):
+	productType = models.ProductType.query.get(id)
+	if productType:
+		return jsonify(formatProductTypeForResponse(productType)), 200
+	else:
+		return jsonify(error="Could not find ProductType"), 400
 
 '''
 create a product type:
