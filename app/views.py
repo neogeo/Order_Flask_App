@@ -16,7 +16,28 @@ def index():
     )
 
 '''
+return all product types, (becuase this could be slow for very large data sets, use the 'limit' query param)
+limit - optional - limit the amount of results returned
+'''
+@app.route('/productType', methods=['GET'])
+def getProductType():
+	limit = request.args.get('limit')
+	if limit:
+		#limit results
+		productTypes = models.ProductType.query.limit(limit).all()	
+	else:
+		#return all
+		productTypes = models.ProductType.query.all()
+
+	return jsonify(data = map(formatProductTypeForResponse, productTypes)), 200
+
+
+'''
 create a product type:
+sku - required - sku of product
+price - required - price of product
+inventory - optional - starting inventory amount
+
 {
 "sku":"Bunnies Large",
 "inventory":"100",
@@ -54,7 +75,48 @@ def createProductType():
 	
 
 	#return newly created productType
-	return jsonify(id=productType.id, sku=productType.sku, inventory=productType.inventory, price=helpers.convertIntToFormattedPrice(productType.price) ), 201
+	return jsonify(formatProductTypeForResponse(productType)), 201
+
+'''
+update a productType, only update the inventory or price for now
+inventory - optional - inventory to ADD
+price - optional - new price
+
+{
+	id:2,
+	inventory:20,
+	price:$20.00
+}
+'''
+@app.route('/productType', methods=['PUT'])
+def updateProductType():
+	#parse json
+	requestJson = request.get_json(force=True)
+	#validate params
+	id = requestJson.get('id')
+	inventory = requestJson.get('inventory')
+	price = requestJson.get('price')
+
+	productType = models.ProductType.query.get(id)
+	#update
+	if productType:
+		try:
+			if productType and inventory:
+				#increase inventory by given amount
+				productType.inventory += int(inventory)
+
+			if productType and price:
+				#set new price
+				productType.price = helpers.parsePrice(price)
+		
+			db.session.commit()
+		except exc.SQLAlchemyError as err:
+			return jsonify(error="Failed to update ProductType"), 400
+
+		#return result of any updates
+		return jsonify(formatProductTypeForResponse(productType)), 200
+	else:
+		return jsonify(error="Failed to find given ProductType"), 400
 
 '''
 delete a productType:
@@ -74,4 +136,9 @@ def deleteProductType(id):
 			pass
 
 	return jsonify(error="Failed to delete ProductType"), 400
+
+#format a ProductType model for a response from the API
+def formatProductTypeForResponse(productType):
+	#convert the price to a dollar format
+	return {'id':productType.id, 'sku':productType.sku, 'inventory':productType.inventory, 'price':helpers.convertIntToFormattedPrice(productType.price)}
 
