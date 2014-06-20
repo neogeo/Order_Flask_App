@@ -36,6 +36,7 @@ def convertIntToFormattedPrice(intPriceInCents):
 #UNIT TESTS
 #verify that a round trip through parsing and converstion generates the expected values
 if __name__=='__main__':
+	
 	x = "$200.00"
    	assert x == convertIntToFormattedPrice(parsePrice(x))
 
@@ -54,5 +55,5 @@ if __name__=='__main__':
    	x = "         "
    	assert "$0.00" == convertIntToFormattedPrice(parsePrice(x))
 
-   	print "price converstion tests pass"
+   	print "price conversion tests pass"
 

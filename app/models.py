@@ -14,7 +14,7 @@ class Order(db.Model):
     billing_city = db.Column(db.String(64), unique = False)
     billing_zipcode = db.Column(db.String(64), unique = False)
 
-    def __init__(self, total, shipping_street, shipping_state, shipping_city, shipping_zipcode, billing_street, billing_state, billing_city, billing_zipcode):
+    def __init__(self, total=0, shipping_street=None, shipping_state=None, shipping_city=None, shipping_zipcode=None, billing_street=None, billing_state=None, billing_city=None, billing_zipcode=None):
         self.total = total
         self.shipping_street = shipping_street
         self.shipping_state = shipping_state
@@ -24,6 +24,23 @@ class Order(db.Model):
         self.billing_state = billing_state
         self.billing_city = billing_city
         self.billing_zipcode = billing_zipcode
+
+    def setShippingAndBillingAddress(self, shippingAddress, billingAddress, sameBillingAddress="false"):
+		self.shipping_street = shippingAddress.get('street')
+		self.shipping_state = shippingAddress.get('city')
+		self.shipping_city = shippingAddress.get('state')
+		self.shipping_zipcode = shippingAddress.get('zip')
+
+		if sameBillingAddress == "true":
+			self.billing_street = self.shipping_street
+			self.billing_state = self.shipping_state
+			self.billing_city = self.shipping_city
+			self.billing_zipcode = self.shipping_zipcode
+		else:
+			self.billing_street = billingAddress.get('street')
+			self.billing_state = billingAddress.get('city')
+			self.billing_city = billingAddress.get('state')
+			self.billing_zipcode = billingAddress.get('zip')
 
     def __repr__(self):
         return '<Order %r>' % (self.total)
