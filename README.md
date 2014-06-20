@@ -26,4 +26,8 @@ six==1.6.1
 sqlalchemy-migrate==0.9.1
 wsgiref==0.1.2
 
+Tests:
+Price converstion test, run:
+	python /app/helpers.py
+
 
