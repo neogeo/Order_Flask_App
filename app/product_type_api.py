@@ -83,11 +83,12 @@ def createProductType():
 	return jsonify(formatProductTypeForResponse(productType)), 201
 
 '''
-update a ProductType, only update the inventory or price
+update a ProductType with a new inventory, sku or price
 inventory - optional - inventory amount (this does affect line items that have already been ordered)
 price - optional - new price
 
 {
+	"sku": "new name",
 	"inventory":"20",
 	"price":"$20.00"
 }
@@ -97,6 +98,7 @@ def updateProductType(id):
 	#parse json
 	requestJson = request.get_json(force=True)
 	#validate params
+	sku = requestJson.get('sku')
 	inventory = requestJson.get('inventory')
 	price = requestJson.get('price')
 
@@ -104,6 +106,10 @@ def updateProductType(id):
 	#update
 	if productType:
 		try:
+			if productType and sku:
+				#change sku
+				productType.sku = sku
+
 			if productType and inventory:
 				#increase inventory by given amount
 				productType.inventory = int(inventory)
