@@ -105,7 +105,6 @@ def createOrder():
 	order.setShippingAndBillingAddress(shippingAddress, billingAddress, sameAddress)
 
 	#for each line item
-	total = 0
 	for line in lines:
 		#validate line params
 		sku = line.get('sku')
@@ -116,12 +115,15 @@ def createOrder():
 
 		#check if product sku exists
 		productType = models.ProductType.query.filter_by(sku=sku).first()
+		#check and update inventory
 		if not productType:
 			return jsonify(error="Product sku not found for sku: "+sku), 400
-		
+		elif not productType.verifyAndUpdateInventory(quantity):
+			return jsonify(error="Not enough inventory for sku: "+sku), 400
+
 		#add up total
 		lineTotal = productType.price * quantity
-		total = total + lineTotal
+		order.increaseTotal(lineTotal)
 
 		product = models.Product(quantity, productType, order)
 		#only need to add the product to the session. SQLAlchemy is smart enough to also add the DB relationships during commit
@@ -129,10 +131,6 @@ def createOrder():
 		
 		#add price for response
 		line['price'] = helpers.convertIntToFormattedPrice( lineTotal )
-
-	#set total
-	order.total = total
-	
 
 	try:
 		db.session.commit()

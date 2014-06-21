@@ -45,6 +45,16 @@ class Order(db.Model):
         self.billing_city = billingAddress.get('state')
         self.billing_zipcode = billingAddress.get('zip')
 
+    def increaseTotal(self, amountIncrease):
+        self.total += amountIncrease
+
+    def decreaseTotal(self, amountDecrease):
+        self.total -= amountDecrease
+
+    #increase or decrease the total based on a new quantity and price
+    def adjustTotalForQuantity(self, currentQuantity, requestedQuantity, price ):
+        self.total = self.total - ((currentQuantity - requestedQuantity) * price)
+
     def __repr__(self):
         return '<Order %r>' % (self.total)
 
@@ -59,6 +69,13 @@ class ProductType(db.Model):
         self.sku = sku
         self.inventory = inventory
         self.price = price
+    def verifyAndUpdateInventory(self, requestedQuantity):
+        #inventory check
+        if self.inventory < requestedQuantity:
+            return None
+        #update inventory
+        self.inventory -= requestedQuantity
+        return True
 
     def __repr__(self):
         return '<ProductType %r>' % (self.sku)
