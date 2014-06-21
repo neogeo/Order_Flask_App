@@ -18,20 +18,52 @@ class TestCase(unittest.TestCase):
 		db.session.remove()
 		db.drop_all()
 
-	def createProductType(self):
+	def createDefaultProductType(self):
 		sku = "ProductType"
 		inventory = 10
 		price = "$5.50"
-		body = data=dict(
-			sku=sku,
-			inventory=inventory,
-			price=price
-		)
+		body = dict(sku=sku, inventory=inventory, price=price)
 		
 		response = self.app.post('/productType', data=json.dumps(body), content_type='application/json')
 		pt_id = json.loads(response.data).get('id')
 		return pt_id
 
+	def createProductType(self, sku, inventory, price):
+		body = dict(sku=sku, inventory=inventory, price=price)
+		
+		response = self.app.post('/productType', data=json.dumps(body), content_type='application/json')
+		pt_id = json.loads(response.data).get('id')
+		return pt_id
+
+	def createDefaultOrder(self):
+		pt_sku="ProductType"
+		pt_id = self.createProductType(pt_sku, 10, "$1.00")
+
+		#when an order is created
+		lines = [dict(sku=pt_sku, quantity= 5 )]
+		shippingAddress = {
+		"street" : "6th",
+		"city" : "Austin",
+		"state" : "Texas",
+		"zip" : "777777"
+		}
+		billingAddress = { 'same':'true' }
+		
+		body = dict(
+			shippingAddress=shippingAddress,
+			billingAddress=billingAddress,
+			lines=lines
+		)
+
+		response = self.app.post('/order', data=json.dumps(body), content_type='application/json')
+		o_id = json.loads(response.data).get('id')
+		return o_id
+
+	'''
+		---------------------
+		PRODUCT TYPE ENDPOINT TESTS
+		---------------------
+	'''
 	def test_ProductTypeCreate(self):
 		#given no product types exist
 		result = self.app.get('/productType')
@@ -43,7 +75,7 @@ class TestCase(unittest.TestCase):
 		sku = "ProductType"
 		inventory = 10
 		price = "$5.50"
-		body = data=dict(
+		body = dict(
 			sku=sku,
 			inventory=inventory,
 			price=price
@@ -64,7 +96,7 @@ class TestCase(unittest.TestCase):
 		sku = "ProductType"
 		inventory = 10
 		price = "$5.50"
-		body = data=dict(
+		body = dict(
 			sku=sku,
 			inventory=inventory,
 			price=price
@@ -86,13 +118,13 @@ class TestCase(unittest.TestCase):
 
 	def test_ProductTypeUpdate(self):
 		#given a product type
-		pt_id = self.createProductType()
+		pt_id = self.createDefaultProductType()
 
 		#when it is updated
 		updated_sku = "NewProductType"
 		updated_inventory = 20
 		updated_price = "$10.50"
-		updated_body = data=dict(
+		updated_body = dict(
 			sku=updated_sku,
 			inventory=updated_inventory,
 			price=updated_price
@@ -109,7 +141,7 @@ class TestCase(unittest.TestCase):
 
 	def test_ProductTypeDelete(self):
 		#given a product type
-		pt_id = self.createProductType()
+		pt_id = self.createDefaultProductType()
 
 		#delete the product type
 		response = self.app.delete('/productType/'+str(pt_id), content_type='application/json')
@@ -124,5 +156,65 @@ class TestCase(unittest.TestCase):
 		
 		assert len(resultJson.get('data')) == 0
 
+	'''
+		---------------------
+		ORDER ENDPOINT TESTS
+		---------------------
+	'''
+
+	def test_OrderGetAll(self):
+		#given no orders exist
+		#when call get all orders
+		response = self.app.get('/order')
+		result = json.loads(response.data)
+		
+		#then no orders are turned
+		assert len(result.get('data')) == 0
+
+	def test_OrderCreate(self):
+		#given a product type with inventory
+		pt_sku="ProductType"
+		pt_id = self.createProductType(pt_sku, 10, "$1.00")
+
+		#when an order is created
+		lines = [dict(sku=pt_sku, quantity= 5 )]
+		shippingAddress = {
+		"street" : "6th",
+		"city" : "Austin",
+		"state" : "Texas",
+		"zip" : "777777"
+		}
+		billingAddress = { 'same':'true' }
+		
+		body = dict(
+			shippingAddress=shippingAddress,
+			billingAddress=billingAddress,
+			lines=lines
+		)
+
+		response = self.app.post('/order', data=json.dumps(body), content_type='application/json')
+		
+		#then the call succeeds and product type exists
+		assert response.status_code == 201
+		result = json.loads(response.data)
+		assert result.get('id')
+		assert result.get('total') == "$5.00"
+		assert len(result.get('lines')) == 1
+
+
+	def test_OrderGetAllExists(self):
+		#given two orders exist
+		self.createDefaultOrder();
+		self.createDefaultOrder();
+
+		#when call to get all orders
+		response = self.app.get('/order')
+		result = json.loads(response.data)
+		
+		#then two orders are returned
+		assert len(result.get('data')) == 2
+
+	
+			
 if __name__ == '__main__':
 	unittest.main()
