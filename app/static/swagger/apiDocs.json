@@ -1,0 +1,4 @@
+{"apiVersion":"1.0.0","swaggerVersion":"1.2","apis":[
+{"path":"/order","description":"Operations on orders"},
+{"path":"/productType","description":"Operations about user"},
+],"info":{"title":"Order Flask APP","description":"Create Poduct Types, create Orders, modify order line items","contact":"ozor.andrew@gmail.com","license":"Apache 2.0","licenseUrl":"http://www.apache.org/licenses/LICENSE-2.0.html"}}

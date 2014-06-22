@@ -14,3 +14,13 @@ def index():
     return render_template("index.html",
         order = order
     )
+
+
+
+@app.route('/inventory')
+def inventory():
+    return render_template("inventory.html")
+
+@app.route('/docs')
+def swagger():
+    return render_template("swagger.html")

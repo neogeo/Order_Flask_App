@@ -4,7 +4,8 @@ from flask import request
 from sqlalchemy import exc
 from app import app
 from app import db, models, helpers, order_api, product_type_api
-
+from flask_sillywalk import SwaggerApiRegistry, ApiParameter, ApiErrorResponse
+from app import register
 '''
 Add lineItems to an existing order. If the line item already exists, then it is ignored (use /order/id/lineItems PUT to upate a line items quantity)
 There must also be enough inventory to add the line item
@@ -26,7 +27,49 @@ request:
   	]
 }
 '''
-@app.route('/order/<id>/lineItems', methods=['POST'])
+@register('/order/<id>/lineItems', method="POST",
+	notes='Add lineItems to an existing order. If the line item already exists, then it is ignored (use /order/id/lineItems PUT to upate a line items quantity)<br>\
+There must also be enough inventory to add the line item<br>\
+lines - required - at least 1 sku is required. <br>\
+				   The sku of a given Product must already exist, and there must also be available inventory of that sku remaning<br>\
+				   sku - required - the sku of the product type to order<br>\
+				   quantity - required - the amount of this product type to order<br>\
+request:<br>\
+{<br>\
+	"lines" : [<br>\
+      {<br>\
+	      "sku":"hot dogs",<br>\
+	      "quantity":"10"<br>\
+      },<br>\
+      {<br>\
+	      "sku":"markers",<br>\
+	      "quantity":"5"<br>\
+      }<br>\
+  	]<br>\
+}',
+  parameters=[
+  ApiParameter(
+        name="id",
+        description="The id of an order",
+        required=True,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False),
+    ApiParameter(
+        name="body",
+        description="The body",
+        required=True,
+        dataType="str",
+        paramType="body",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, "The Order object"),
+    ApiErrorResponse(400, "Not enough inventory for sku"),
+    ApiErrorResponse(400, "Failed to find given Order")
+  ],
+  nickname="order_api")
+#@app.route('/order/<id>/lineItems', methods=['POST'])
 def createProductsForOrder(id):
 	#parse json
 	requestJson = request.get_json(force=True)
@@ -103,7 +146,49 @@ request:
   	]
 }
 '''
-@app.route('/order/<id>/lineItems', methods=['PUT'])
+@register('/order/<id>/lineItems', method="PUT",
+	notes='Update the quantities of line items on an order. If the line item does not exist, then it is ignored.<br>\
+There must also be enough inventory of a line item<br>\
+lines - required - <br>\
+				   The sku of a given Product must already exist, and there must also be available inventory of that sku remaning<br>\
+				   sku - required - the sku of the product type to order<br>\
+				   quantity - required - the new amount of the line item. If set to less than 1, it is ignored (use order/<id>/removeLineItems to remove line items)<br>\
+request:<br>\
+{<br>\
+	"lines" : [<br>\
+      {<br>\
+	      "sku":"hot dogs",<br>\
+	      "quantity":"10"<br>\
+      },<br>\
+      {<br>\
+	      "sku":"markers",<br>\
+	      "quantity":"6"<br>\
+      }<br>\
+  	]<br>\
+}',
+  parameters=[
+  ApiParameter(
+        name="id",
+        description="The id of an order",
+        required=True,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False),
+    ApiParameter(
+        name="body",
+        description="The body for update",
+        required=True,
+        dataType="str",
+        paramType="body",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, "The order"),
+    ApiErrorResponse(400, "Not enough inventory for sku"),
+    ApiErrorResponse(400, "Failed to update line items on Order")
+  ],
+  nickname="order_api")
+#@app.route('/order/<id>/lineItems', methods=['PUT'])
 def updateProductsFromOrder(id):
 	#parse json
 	requestJson = request.get_json(force=True)
@@ -172,7 +257,45 @@ request:
   	]
 }
 '''
-@app.route('/order/<id>/removeLineItems', methods=['PUT'])
+@register('/order/<id>/removeLineItems', method="DELETE",
+	notes='Remove lineItems from an existing order. If the line item does not exist, then it is ignored <br>\
+lines - required - <br>\
+				   The sku of a given Product must already exist, and there must also be available inventory of that sku remaning<br>\
+				   sku - required - the sku of the product type to order<br>\
+request:<br>\
+{<br>\
+	"lines" : [<br>\
+      {<br>\
+	      "sku":"hot dogs"<br>\
+      },<br>\
+      {<br>\
+	      "sku":"markers"<br>\
+      }<br>\
+  	]<br>\
+}',
+  parameters=[
+    ApiParameter(
+        name="id",
+        description="The id of an order",
+        required=True,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False),
+    ApiParameter(
+        name="body",
+        description="The the body",
+        required=True,
+        dataType="str",
+        paramType="body",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, ""),
+    ApiErrorResponse(400, "Failed to remove line items from Order"),
+    ApiErrorResponse(400, "Failed to find given Order")
+  ],
+  nickname="order_api")
+#@app.route('/order/<id>/removeLineItems', methods=['PUT'])
 def deleteProductsFromOrder(id):
 	#parse json
 	requestJson = request.get_json(force=True)

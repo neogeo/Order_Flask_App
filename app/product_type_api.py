@@ -4,7 +4,8 @@ from flask import request
 from sqlalchemy import exc
 from app import app
 from app import db, models, helpers
-
+from flask_sillywalk import SwaggerApiRegistry, ApiParameter, ApiErrorResponse
+from app import register
 
 '''---------------------------------------------
 		ProductType Endpoints
@@ -14,7 +15,23 @@ return all product types, (becuase this could be slow for very large data sets, 
 limit - optional query param - limit the amount of results returned
 /productType?limit=10
 '''
-@app.route('/productType', methods=['GET'])
+@register('/productType', method="GET",
+ 	notes="return all product types, (becuase this could be slow for very large data sets, use the 'limit' query param)<br>\
+ 	imit - optional query param - limit the amount of results returned",
+  parameters=[
+    ApiParameter(
+        name="limit",
+        description="limit the amount of results returned",
+        required=False,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, "Array of Product Types"),
+  ],
+  nickname="order_api")
+#@app.route('/productType', methods=['GET'])
 def getAllProductTypes():
 	limit = request.args.get('limit')
 	if limit:
@@ -29,13 +46,70 @@ def getAllProductTypes():
 '''
 return an ProductType by id
 '''
-@app.route('/productType/<id>', methods=['GET'])
+@register('/productType/<id>', method="GET",
+ 	notes="return an ProductType by id",
+  parameters=[
+    ApiParameter(
+        name="id",
+        description="The id of the product type",
+        required=True,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, "The prodcut type object"),
+    ApiErrorResponse(400, "Could not find ProductType")
+  ],
+  nickname="order_api")
+#@app.route('/productType/<id>', methods=['GET'])
 def getProductType(id):
 	productType = models.ProductType.query.get(id)
 	if productType:
 		return jsonify(formatProductTypeForResponse(productType)), 200
 	else:
 		return jsonify(error="Could not find ProductType"), 400
+
+'''
+return a ProductType by sku
+sku - required - the sku to return
+
+request:
+/productTypeBySku?sku=Hot%20Dogs
+'''
+@register('/productTypeBySku', method="GET",
+ 	notes="return a ProductType by sku<br>\
+ 	sku - required - the sku to return<br>\
+<br>\
+request:<br>\
+/productTypeBySku?sku=Hot%20Dogs",
+  parameters=[
+    ApiParameter(
+        name="sku",
+        description="The sku of the product type",
+        required=True,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, "The prodcut type object"),
+    ApiErrorResponse(400, "Product sku not found for sku")
+  ],
+  nickname="order_api")
+#@app.route('/productTypeBySku', methods=['GET'])
+def getProductTypeBySku():
+	#validate query param
+	sku = request.args.get('sku')
+	if not sku:
+		return jsonify(error="Required query param not set, 'sku'"), 400
+
+	productType = models.ProductType.query.filter_by(sku=sku).first()
+	if not productType:
+		return jsonify(error="Product sku not found for sku: "+sku), 400
+	else:
+		return jsonify(formatProductTypeForResponse(productType)), 200
+
 
 '''
 create a product type:
@@ -49,7 +123,32 @@ inventory - optional - starting inventory amount
 "price":"$10.51"
 }
 '''
-@app.route('/productType', methods=['POST'])
+@register('/productType', method="POST",
+ 	notes='create a product type:<br>\
+sku - required - sku of product<br>\
+price - required - price of product<br>\
+inventory - optional - starting inventory amount<br>\
+<br>\
+{<br>\
+"sku":"Bunnies Large",<br>\
+"inventory":"100",<br>\
+"price":"$10.51"<br>\
+}',
+  parameters=[
+    ApiParameter(
+        name="body",
+        description="The sku of the product type",
+        required=True,
+        dataType="objec",
+        paramType="body",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(201, "The prodcut type object"),
+    ApiErrorResponse(400, "Failed to create ProductType")
+  ],
+  nickname="order_api")
+#@app.route('/productType', methods=['POST'])
 def createProductType():
 	#parse json
 	requestJson = request.get_json(force=True)
@@ -93,7 +192,40 @@ price - optional - new price
 	"price":"$20.00"
 }
 '''
-@app.route('/productType/<id>', methods=['PUT'])
+@register('/productType/<id>', method="PUT",
+ 	notes='update a ProductType with a new inventory, sku or price<br>\
+inventory - optional - inventory amount (this does affect line items that have already been ordered)<br>\
+price - optional - new price<br>\
+<br>\
+{<br>\
+	"sku": "new name",<br>\
+	"inventory":"20",<br>\
+	"price":"$20.00"<br>\
+}',
+  parameters=[
+  ApiParameter(
+        name="id",
+        description="The id of the product type",
+        required=True,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False),
+    ApiParameter(
+        name="body",
+        description="The body",
+        required=True,
+        dataType="obj",
+        paramType="body",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, ""),
+    ApiErrorResponse(400, "Failed to update ProductType"),
+    ApiErrorResponse(400, "Failed to find given ProductType")
+
+  ],
+  nickname="order_api")
+#@app.route('/productType/<id>', methods=['PUT'])
 def updateProductType(id):
 	#parse json
 	requestJson = request.get_json(force=True)
@@ -131,7 +263,23 @@ def updateProductType(id):
 delete a productType:
 /productType/id
 '''
-@app.route('/productType/<id>', methods=['DELETE'])
+@register('/productType/<id>', method="DELETE",
+ 	notes="Delete a ProductType",
+  parameters=[
+    ApiParameter(
+        name="id",
+        description="The id of the product type",
+        required=True,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, ""),
+    ApiErrorResponse(400, "Failed to delete ProductType")
+  ],
+  nickname="order_api")
+#@app.route('/productType/<id>', methods=['DELETE'])
 def deleteProductType(id):
 	productType = models.ProductType.query.get(id)
 

@@ -40,7 +40,7 @@ class TestCase(unittest.TestCase):
 		pt_id = self.createProductType(pt_sku, 10, "$1.00")
 
 		#when an order is created
-		lines = [dict(sku=pt_sku, quantity= 5 )]
+		lines = [dict(sku=pt_sku, quantity=5 )]
 		shippingAddress = {
 		"street" : "6th",
 		"city" : "Austin",
@@ -91,6 +91,26 @@ class TestCase(unittest.TestCase):
 		assert result.get('inventory') == inventory
 		assert result.get('price') == price
 	
+	def test_ProductTypeCreateDuplicate(self):
+		#given a product type
+		pt_sku="ProductType"
+		pt_id = self.createProductType(pt_sku, 10, "$1.00")
+
+		#when a product with the same name is created
+		sku = "ProductType"
+		inventory = 5
+		price = "$6.50"
+		body = dict(
+			sku=sku,
+			inventory=inventory,
+			price=price
+		)
+
+		response = self.app.post('/productType', data=json.dumps(body), content_type='application/json')
+
+		#then, the call fails
+		assert response.status_code == 400
+
 	def test_ProductTypeGet(self):
 		#given a product type
 		sku = "ProductType"
@@ -115,6 +135,24 @@ class TestCase(unittest.TestCase):
 		assert result.get('sku') == sku
 		assert result.get('inventory') == inventory
 		assert result.get('price') == price
+
+	def test_ProductTypeGetBySku(self):
+		#given a product type
+		pt_sku="ProductType"
+		pt_inventory = 10
+		pt_price = "$5.50"
+		pt_id = self.createProductType(pt_sku, pt_inventory, pt_price)
+
+		#when it is retrieved by sku
+		response = self.app.get('/productTypeBySku?sku='+pt_sku)
+
+		#then, the product type is returned
+		assert response.status_code == 200
+		result = json.loads(response.data)
+		assert result.get('id') == pt_id
+		assert result.get('sku') == pt_sku
+		assert result.get('inventory') == pt_inventory
+		assert result.get('price') == pt_price
 
 	def test_ProductTypeUpdate(self):
 		#given a product type
@@ -214,7 +252,126 @@ class TestCase(unittest.TestCase):
 		#then two orders are returned
 		assert len(result.get('data')) == 2
 
-	
+	def test_OrderGetById(self):
+		#given an order exists
+		o_id = self.createDefaultOrder();
+		
+		#when get order is called
+		response = self.app.get('/order/'+str(o_id))
+
+		#then, the order is returned
+		assert response.status_code == 200
+		result = json.loads(response.data)
+		assert result.get('id') == o_id
+		assert result.get('total') == "$5.00"
+		assert len(result.get('lines')) == 1
+
+	def test_OrderDelete(self):
+		#given an order exists
+		o_id = self.createDefaultOrder();
+		
+		#when delete is called
+		response = self.app.delete('/order/'+str(o_id))
+
+		#then, the order no longer exists
+		assert response.status_code == 200
+
+		response = self.app.get('/order/'+str(o_id))
+		assert response.status_code == 400
+
+	'''
+		---------------------
+		ORDER LINE ITEMS ENDPOINT TESTS
+		---------------------
+	'''
+	def test_OrderLineItemCreate(self):
+		#given an order with one line item
+		pt_id = self.createDefaultProductType();
+		o_id = self.createDefaultOrder();
+
+		pt_sku2 ="ProductTypeTwo"
+		pt_inventory2=10
+		pt_id2 = self.createProductType(pt_sku2, pt_inventory2, "$1.00")
+
+		#when create another line item on the order
+		lines = [dict(sku=pt_sku2, quantity= 1 )]
+		body = dict( lines=lines )
+
+		response = self.app.post('/order/'+str(o_id)+'/lineItems', data=json.dumps(body), content_type='application/json')
+
+		#then the order has two line items and a new total, and inventory has decreased
+		assert response.status_code == 200
+		result = json.loads(response.data)
+		assert result.get('id') == o_id
+		assert result.get('total') == "$28.50"
+		assert len(result.get('lines')) == 2
+		
+		#and inventory is reduced by 1
+		response = self.app.get('/productType/'+str(pt_id2), content_type='application/json')
+		assert response.status_code == 200
+		result = json.loads(response.data)
+		assert result.get('inventory') == (pt_inventory2-1)
+
+	def test_OrderLineItemCreateNoInventory(self):
+		#given an order with one line item exists
+		pt_id = self.createDefaultProductType();
+		o_id = self.createDefaultOrder();
+
+		pt_sku2 ="ProductTypeTwo"
+		pt_inventory2=10
+		pt_id2 = self.createProductType(pt_sku2, pt_inventory2, "$1.00")
+
+		#when add another line item with not enough inventory remaining
+		lines = [dict(sku=pt_sku2, quantity= 11 )]
+		body = dict( lines=lines )
+
+		response = self.app.post('/order/'+str(o_id)+'/lineItems', data=json.dumps(body), content_type='application/json')
+
+		#then the call fails
+		assert response.status_code == 400
+
+	def test_OrderLineItemDelete(self):
+		#given an order with one line item
+		pt_id = self.createDefaultProductType();
+		o_id = self.createDefaultOrder();
+
+		#when the line item is deleted
+		lines = [dict(sku="ProductType", quantity= 1 )]
+		body = dict( lines=lines )
+
+		response = self.app.delete('/order/'+str(o_id)+'/removeLineItems', data=json.dumps(body), content_type='application/json')
+		
+		#then the order has no line items and a new total
+		assert response.status_code == 200
+		result = json.loads(response.data)
+		assert result.get('id') == o_id
+		assert result.get('total') == "$0.00"
+		assert len(result.get('lines')) == 0
+
+	def test_OrderLineItemUpdate(self):
+		#given an order with a line item
+		pt_id = self.createDefaultProductType();
+		o_id = self.createDefaultOrder();
+
+		#when the line item quantity is updated
+		lines = [dict(sku="ProductType", quantity= 3 )]
+		body = dict( lines=lines )
+
+		response = self.app.put('/order/'+str(o_id)+'/lineItems', data=json.dumps(body), content_type='application/json')
+		
+		#the order has an updated total and the inventory has decreased
+		assert response.status_code == 200
+		result = json.loads(response.data)
+		assert result.get('id') == o_id
+		assert result.get('total') == "$16.50"
+		assert len(result.get('lines')) == 1
+
+		response = self.app.get('/productType/'+str(pt_id), content_type='application/json')
+		assert response.status_code == 200
+		result = json.loads(response.data)
+		assert result.get('inventory') == 2
+
+
 			
 if __name__ == '__main__':
 	unittest.main()

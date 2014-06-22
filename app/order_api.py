@@ -4,7 +4,8 @@ from flask import request
 from sqlalchemy import exc
 from app import app
 from app import db, models, helpers
-
+from flask_sillywalk import SwaggerApiRegistry, ApiParameter, ApiErrorResponse
+from app import register
 '''---------------------------------------------
 		Order Endpoints
    ---------------------------------------------'''
@@ -14,7 +15,23 @@ return all orders, (becuase this could be slow for very large data sets, use the
 limit - optional query param - limit the amount of results returned
 /order?limit=10
 '''
-@app.route('/order', methods=['GET'])
+@register('/order', method="GET",
+notes="return all orders, (becuase this could be slow for very large data sets, use the 'limit' query param)<br>\
+limit - optional query param - limit the amount of results returned",
+  parameters=[
+    ApiParameter(
+        name="limit",
+        description="limit the amount of results returned",
+        required=False,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, 'Array of orders')
+  ],
+  nickname="order_api")
+#@app.route('/order', methods=['GET'])
 def getAllOrders():
 	limit = request.args.get('limit')
 	if limit:
@@ -29,7 +46,23 @@ def getAllOrders():
 '''
 return an Order by id
 '''
-@app.route('/order/<id>', methods=['GET'])
+@register('/order/<id>', method="GET",
+	notes='return an Order by id',
+  parameters=[
+    ApiParameter(
+        name="id",
+        description="The id of the order",
+        required=True,
+        dataType="str",
+        paramType="path",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, "The Order object"),
+    ApiErrorResponse(400, "Could not find Order")
+  ],
+  nickname="order_api")
+#@app.route('/order/<id>', methods=['GET'])
 def getOrder(id):
 	order = models.Order.query.get(id)
 	if order:
@@ -82,7 +115,64 @@ response:{
 	"lines":[{"price":...}]
 }
 '''
-@app.route('/order', methods=['POST'])
+@register('/order', method="POST",
+	notes='Create an order. Returns the id, total and price per sku; along with the given information <br>\
+lines - required - at least 1 sku is required. <br>\
+				   The sku of a given Product must already exist, and there must also be available inventory of that sku remaning<br>\
+				   sku - required - the sku of the product type to order<br>\
+				   quantity - required - the amount of this product type to order<br>\
+billingAddress - "same:true" can be used to indicate the same address information as shippingAddres (e.g. "billingAddress":{"same":"true"} )<br>\
+<br>\
+request:<br>\
+{<br>\
+	"shippingAddress" : {<br>\
+		"street" : "6th",<br>\
+		"city" : "Austin",<br>\
+		"state" : "Texas",<br>\
+		"zip" : "777777"<br>\
+	},<br>\
+	"billingAddress" : {<br>\
+		"same":"true"<br>\
+			OR<br>\
+		"street" : "6th",<br>\
+		"city" : "Austin",<br>\
+		"state" : "Texas",<br>\
+		"zip" : "777777"<br>\
+   	},<br>\
+	"lines" : [<br>\
+      {<br>\
+	      "sku":"hot dogs",<br>\
+	      "quantity":"10"<br>\
+      },<br>\
+      {<br>\
+	      "sku":"markers",<br>\
+	      "quantity":"5"<br>\
+      }<br>\
+  	]<br>\
+}<br>\
+<br>\
+response:{<br>\
+	id:order_id,<br>\
+	total: "$15.00",<br>\
+	"shippingAddress":{...},<br>\
+	"billingAddress":{...},<br>\
+	"lines":[{"price":...}]<br>\
+}',
+  parameters=[
+    ApiParameter(
+        name="id",
+        description="The id of the order",
+        required=True,
+        dataType="str",
+        paramType="body",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(201, "The Order object"),
+    ApiErrorResponse(400, "Failed to create order")
+  ],
+  nickname="order_api")
+#@app.route('/order', methods=['POST'])
 def createOrder():
 	#parse json
 	requestJson = request.get_json(force=True)
@@ -158,7 +248,38 @@ request:
    	}
 }
 '''
-@app.route('/order/<id>', methods=['PUT'])
+@register('/order', method="PUT",
+	notes = ' Update an orders shipping or billing address. Use the /order/<id>/lineItems endpoints to update the line items.<br>\
+request:<br>\
+{<br>\
+	"shippingAddress" : {<br>\
+		"street" : "6th",<br>\
+		"city" : "Austin".<br>\
+		"state" : "Texas".<br>\
+		"zip" : "777777"<br>\
+	},<br>\
+	"billingAddress" : {<br>\
+		"street" : "6th",<br>\
+		"city" : "Austin",<br>\
+		"state" : "Texas",<br>\
+		"zip" : "777777"<br>\
+   	}<br>\
+}',
+  parameters=[
+    ApiParameter(
+        name="body",
+        description="contains shippingAddress or billingAddress",
+        required=False,
+        dataType="object",
+        paramType="form",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, "The Order object"),
+    ApiErrorResponse(400, "Failed to update Order")
+  ],
+  nickname="order_api")
+#@app.route('/order/<id>', methods=['PUT'])
 def updateOrder(id):
 	#parse json
 	requestJson = request.get_json(force=True)
@@ -189,7 +310,23 @@ def updateOrder(id):
 delete an order:
 /order/id
 '''
-@app.route('/order/<id>', methods=['DELETE'])
+@register('/order/<id>', method="DELETE",
+	notes='Delete an order',
+  parameters=[
+    ApiParameter(
+        name="id",
+        description="The id of the order",
+        required=True,
+        dataType="str",
+        paramType="param",
+        allowMultiple=False)
+  ],
+  responseMessages=[
+    ApiErrorResponse(200, ""),
+    ApiErrorResponse(400, "Failed to delete order")
+  ],
+  nickname="order_api")
+#@app.route('/order/<id>', methods=['DELETE'])
 def deleteOrder(id):
 	order = models.Order.query.get(id)
 
