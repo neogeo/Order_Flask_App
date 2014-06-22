@@ -160,8 +160,8 @@ response:{<br>\
 }',
   parameters=[
     ApiParameter(
-        name="id",
-        description="The id of the order",
+        name="body",
+        description="The body",
         required=True,
         dataType="str",
         paramType="body",
@@ -271,7 +271,7 @@ request:<br>\
         description="contains shippingAddress or billingAddress",
         required=False,
         dataType="object",
-        paramType="form",
+        paramType="body",
         allowMultiple=False)
   ],
   responseMessages=[
