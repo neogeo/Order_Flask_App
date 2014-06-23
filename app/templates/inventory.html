@@ -43,20 +43,24 @@
 		ajaxGet("productType",
 			function(dataJson){
 				if(!isObjEmpty(dataJson)){
-					productTypes = dataJson['data'];
-					//show all product types
-					for(var i=0; i<productTypes.length; i++){
-						createProductTypeRow(productTypes[i].id, productTypes[i].sku, productTypes[i].price, productTypes[i].inventory);
+					if(dataJson['data'].length == 0){
+						$('#mainContainer').append("Add some product types first using POST /productType");
+					}else{
+						productTypes = dataJson['data'];
+						//show all product types
+						for(var i=0; i<productTypes.length; i++){
+							createProductTypeRow(productTypes[i].id, productTypes[i].sku, productTypes[i].price, productTypes[i].inventory);
+						}
 					}
 					
 				}else{
-					$('#mainContainer').html("Add some product types first using POST /productType");
+					$('#mainContainer').append("Add some product types first using POST /productType");
 				}
 			},
 			function(errorJson){
 				if(hasError(errorJson) && errorJson.error == 400){
 					//show timeline does not exist
-					$('#mainContainer').html("Error retrieving product types");
+					$('#mainContainer').append("Error retrieving product types");
 				}
 			}
 		);
