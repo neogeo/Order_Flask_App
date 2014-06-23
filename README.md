@@ -7,7 +7,7 @@ Features:
 * All CRUD operations for Product Type using /productType
 * All CRUD operations for Orders using /order
 * All CRUD operations for line items using /order/<id>/lineItems
-* Live Interactive API documentation using Swagger and the Flask_Sillwalk module (https://github.com/hobbeswalsh/flask-sillywalk) at /docs
+* Live Interactive API documentation using Swagger and the Flask_Sillwalk module (https://github.com/hobbeswalsh/flask-sillywalk) at /docs, or take a look at http://ozly.webfactional.com/docs
 * Inventory management
 * Real-time inventory management UI view using Faye. Monitor the effect all the API calls have on the current inventory
 , and restock empty ProductTypes!
