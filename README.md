@@ -37,8 +37,10 @@ cp flask-sillwalk/setup.py ../virtual_env/lib/python2.7/site-packages
 
 3. RUN UNIT TESTS
 -----------------
-```python test.py
-python app/helpers.py```
+```
+python test.py
+python app/helpers.py
+```
 
 4. RUN APPLICATION
 -----------------
@@ -56,7 +58,8 @@ My environment
 -----------------
 * My environment contained the following modules:
 
-```Flask==0.10.1
+```
+Flask==0.10.1
 Flask-SQLAlchemy==1.0
 Flask-Swagger==1.0
 Jinja2==2.7.3
@@ -65,7 +68,8 @@ SQLAlchemy==0.9.4
 Werkzeug==0.9.6
 itsdangerous==0.24
 requests==2.3.0
-wsgiref==0.1.2```
+wsgiref==0.1.2
+```
 
 
 
