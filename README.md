@@ -7,12 +7,12 @@ Features:
 * All CRUD operations for Product Type using /productType
 * All CRUD operations for Orders using /order
 * All CRUD operations for line items using /order/<id>/lineItems
-* Live Interactive API documenation using Swagger and the Flask_Sillwalk module (https://github.com/hobbeswalsh/flask-sillywalk)
-* Inventory managemnt
-* Real-time inventory management UI view using Faye. Monitor the effect all the API calls have on the current invenory
+* Live Interactive API documentation using Swagger and the Flask_Sillwalk module (https://github.com/hobbeswalsh/flask-sillywalk)
+* Inventory management
+* Real-time inventory management UI view using Faye. Monitor the effect all the API calls have on the current inventory
 , and restock empty ProductTypes!
-* Descriptive API error messsages to aid with usage
-* Currency handling that mitigates floating point loss of percsion errors
+* Descriptive API error messages to aid with usage
+* Currency handling that mitigates floating point loss of precision errors
 
 1. INSTALL
 -----------------
@@ -48,7 +48,7 @@ python app/helpers.py
 * Then go to localhost:5000/
 * The API docs at localhost:5000/docs
 
-By default the app runs with a sqllite database. you can change it to mysql in config.py. 
+By default the app runs with a SQLlite database. you can change it to mysql in config.py. 
 
 
 
