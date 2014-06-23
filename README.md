@@ -7,12 +7,13 @@ Features:
 * All CRUD operations for Product Type using /productType
 * All CRUD operations for Orders using /order
 * All CRUD operations for line items using /order/<id>/lineItems
-* Live Interactive API documentation using Swagger and the Flask_Sillwalk module (https://github.com/hobbeswalsh/flask-sillywalk)
+* Live Interactive API documentation using Swagger and the Flask_Sillwalk module (https://github.com/hobbeswalsh/flask-sillywalk) at /docs
 * Inventory management
 * Real-time inventory management UI view using Faye. Monitor the effect all the API calls have on the current inventory
 , and restock empty ProductTypes!
 * Descriptive API error messages to aid with usage
 * Currency handling that mitigates floating point loss of precision errors
+* Unit tests for all API endpoints
 
 1. INSTALL
 -----------------
