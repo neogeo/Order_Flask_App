@@ -1,12 +1,112 @@
 {% extends "base.html" %}
 {% block content %}
 
- TODO
+<h1>Inventory Overview</h1>
+<h3>A real-time overview of the current inventory and its status</h3>
+<div class='description'>The resulting inventory modifications from API calls to <em>/order</em>, <em>/order/id/lineItems</em>, and <em>/productType</em> are reflected instantly in this page</div>
+<div class='description'>See the <a href='/docs'>API Docs</a> for usage information</div>
+<div id='debug'></div>
+
+<div id="myModal" class="modal hide fade">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    Set Inventory
+  </div>
+  <div class="modal-body">
+    <input id="dlg_input" type="text"></input>
+  </div>
+  <div class="modal-footer">
+    <button id="dlg_update_button" class="btn">Update</button>
+  </div>
+</div>
 
 <script type="text/javascript">
-	
+	function setUp(){
+		//setup modal dialog
+		$('#myModal').modal('hide');
+		$('#dlg_update_button').click(function(){
+			var inventory = $("#dlg_input").val();
+			var pt_id = $('#myModal').attr('pt_id');
+
+			var body = { "inventory": inventory };
+			ajaxPutWithBody('productType/'+pt_id, JSON.stringify(body), function(dataJson){
+				if(!isObjEmpty(dataJson)){
+					$('#myModal').modal('hide');
+				}else{
+					alert('faild to update, please enter a number');
+				}
+			});
+			
+		});
+
+		//get all product types
+		ajaxGet("productType",
+			function(dataJson){
+				if(!isObjEmpty(dataJson)){
+					productTypes = dataJson['data'];
+					//show all product types
+					for(var i=0; i<productTypes.length; i++){
+						createProductTypeRow(productTypes[i].id, productTypes[i].sku, productTypes[i].price, productTypes[i].inventory);
+					}
+					
+				}else{
+					$('#mainContainer').html("Add some product types first using POST /productType");
+				}
+			},
+			function(errorJson){
+				if(hasError(errorJson) && errorJson.error == 400){
+					//show timeline does not exist
+					$('#mainContainer').html("Error retrieving product types");
+				}
+			}
+		);
+
+
+	};
+
+	function createProductTypeRow(id, sku, price, inventory){
+		var $main_row = $( document.createElement('div') ).addClass("row-fluid").attr("id", "product_type_"+id);
+			var $row = $( document.createElement('div') ).addClass("row-fluid").attr("id", id);
+				var $sku = $( document.createElement('div') ).addClass("span8").html('<strong>'+sku+'</strong>');
+				var $price = $( document.createElement('div') ).addClass("span2").html(price);
+				var $update_btn = $( document.createElement('button') ).addClass("btn").html("Set Inventory");
+			var $row_inventory = $( document.createElement('div') ).addClass("row-fluid").attr("id", "row_inventory"+id);
+				var $inventory = $( document.createElement('div') ).addClass("span4 inventory").attr("id", "inventory_"+id).html(inventory);
+
+		$row.append($sku).append($price).append($update_btn);
+		$row_inventory.append($inventory);
+		$main_row.append($row).append($row_inventory);
+
+		$('#mainContainer').append($main_row);
+
+		if(inventory < 1){
+			$("#row_inventory"+id).addClass('empty');
+		}
+
+		$update_btn.click(function(){
+			//set context to current producty type
+			$('#myModal').attr('pt_id', id);
+			//show update dialog
+			$('#myModal').modal('show');
+		})
+
+	}
+
+	function updateProductTypeRow(id, inventory){
+		//update UI
+		$("#inventory_"+id).html(inventory);
+		$("#row_inventory"+id).stop(true,true).effect("highlight", {queue:false, duration:800});
+		if(inventory < 1){
+			$("#row_inventory"+id).addClass('empty');
+		}else{
+			$("#row_inventory"+id).removeClass('empty');
+		}
+	}
+
 	$(document).ready(function(){
-		
+		setUp();
+		//setUpFayeded($("#debug"));
+		setUpFayeded(undefined);
 	});		
 </script>
 

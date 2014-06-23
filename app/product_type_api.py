@@ -6,15 +6,11 @@ from app import app
 from app import db, models, helpers
 from flask_sillywalk import SwaggerApiRegistry, ApiParameter, ApiErrorResponse
 from app import register
+from threading import Thread
 
 '''---------------------------------------------
 		ProductType Endpoints
    ---------------------------------------------'''
-'''
-return all product types, (becuase this could be slow for very large data sets, use the 'limit' query param)
-limit - optional query param - limit the amount of results returned
-/productType?limit=10
-'''
 @register('/productType', method="GET",
  	notes="return all product types, (becuase this could be slow for very large data sets, use the 'limit' query param)<br>\
  	imit - optional query param - limit the amount of results returned",
@@ -43,9 +39,6 @@ def getAllProductTypes():
 
 	return jsonify(data = map(formatProductTypeForResponse, productTypes)), 200
 
-'''
-return an ProductType by id
-'''
 @register('/productType/<id>', method="GET",
  	notes="return an ProductType by id",
   parameters=[
@@ -70,13 +63,6 @@ def getProductType(id):
 	else:
 		return jsonify(error="Could not find ProductType"), 400
 
-'''
-return a ProductType by sku
-sku - required - the sku to return
-
-request:
-/productTypeBySku?sku=Hot%20Dogs
-'''
 @register('/productTypeBySku', method="GET",
  	notes="return a ProductType by sku<br>\
  	sku - required - the sku to return<br>\
@@ -111,18 +97,6 @@ def getProductTypeBySku():
 		return jsonify(formatProductTypeForResponse(productType)), 200
 
 
-'''
-create a product type:
-sku - required - sku of product
-price - required - price of product
-inventory - optional - starting inventory amount
-
-{
-"sku":"Bunnies Large",
-"inventory":"100",
-"price":"$10.51"
-}
-'''
 @register('/productType', method="POST",
  	notes='create a product type:<br>\
 sku - required - sku of product<br>\
@@ -178,20 +152,13 @@ def createProductType():
 		return jsonify(error="Failed to create ProductType"), 400
 	
 
+	#publish update
+	helpers.publishUpdate("CREATE_PRODUCT_TYPE", dict(id=productType.id, inventory=productType.inventory, 
+		price=helpers.convertIntToFormattedPrice(productType.price), sku=productType.sku))
+
 	#return newly created productType
 	return jsonify(formatProductTypeForResponse(productType)), 201
 
-'''
-update a ProductType with a new inventory, sku or price
-inventory - optional - inventory amount (this does affect line items that have already been ordered)
-price - optional - new price
-
-{
-	"sku": "new name",
-	"inventory":"20",
-	"price":"$20.00"
-}
-'''
 @register('/productType/<id>', method="PUT",
  	notes='update a ProductType with a new inventory, sku or price<br>\
 inventory - optional - inventory amount (this does affect line items that have already been ordered)<br>\
@@ -254,17 +221,16 @@ def updateProductType(id):
 		except exc.SQLAlchemyError as err:
 			return jsonify(error="Failed to update ProductType"), 400
 
+		#publish update
+		helpers.publishUpdate("UPDATE_PRODUCT_TYPE", dict(id=productType.id, inventory=productType.inventory))
+
 		#return result of any updates
 		return jsonify(formatProductTypeForResponse(productType)), 200
 	else:
 		return jsonify(error="Failed to find given ProductType"), 400
 
-'''
-delete a productType:
-/productType/id
-'''
 @register('/productType/<id>', method="DELETE",
- 	notes="Delete a ProductType",
+ 	notes="delete a ProductType. If there any line items associtated with this type, they will deleted as well",
   parameters=[
     ApiParameter(
         name="id",
@@ -284,12 +250,21 @@ def deleteProductType(id):
 	productType = models.ProductType.query.get(id)
 
 	if productType:
-		#delete
+		#remove assicated line items
+		products = db.session.query(models.Product).join(models.ProductType).filter(models.ProductType.id == productType.id)
+		for product in products:
+			db.session.delete(product)
+
+		#delete product type
 		db.session.delete(productType)
 		try:
 			db.session.commit()
+			#publish delete
+			helpers.publishUpdate("DELETE_PRODUCT_TYPE", dict(id=productType.id))
+
 			return jsonify(id=id), 200
 		except exc.SQLAlchemyError as err:
+			print err
 			pass
 
 	return jsonify(error="Failed to delete ProductType"), 400

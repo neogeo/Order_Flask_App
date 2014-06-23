@@ -1,0 +1,13 @@
+.description{
+	font-size: 1.2em;
+	margin-bottom: 10px;
+}
+
+.inventory{
+	margin-bottom: 5px;
+	font-size: 3em;
+}
+
+.empty{
+	background-color: red;
+}

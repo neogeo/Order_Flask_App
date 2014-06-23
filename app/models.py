@@ -1,4 +1,5 @@
 from app import db
+from app import helpers
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -69,12 +70,17 @@ class ProductType(db.Model):
         self.sku = sku
         self.inventory = inventory
         self.price = price
+        
     def verifyAndUpdateInventory(self, requestedQuantity):
         #inventory check
         if self.inventory < requestedQuantity:
             return None
         #update inventory
         self.inventory -= requestedQuantity
+
+        #publish the update
+        helpers.publishUpdate("UPDATE_INVENTORY", dict(id=self.id, inventory=self.inventory))
+
         return True
 
     def __repr__(self):

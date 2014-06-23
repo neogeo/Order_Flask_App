@@ -9,12 +9,6 @@ from app import register
 '''---------------------------------------------
 		Order Endpoints
    ---------------------------------------------'''
-
-'''
-return all orders, (becuase this could be slow for very large data sets, use the 'limit' query param)
-limit - optional query param - limit the amount of results returned
-/order?limit=10
-'''
 @register('/order', method="GET",
 notes="return all orders, (becuase this could be slow for very large data sets, use the 'limit' query param)<br>\
 limit - optional query param - limit the amount of results returned",
@@ -43,9 +37,7 @@ def getAllOrders():
 
 	return jsonify(data = map(formatOrderForGetResponse, orders)), 200
 
-'''
-return an Order by id
-'''
+
 @register('/order/<id>', method="GET",
 	notes='return an Order by id',
   parameters=[
@@ -71,50 +63,6 @@ def getOrder(id):
 		return jsonify(error="Could not find Order"), 400
 
 
-'''
-Create an order. Returns the id, total and price per sku; along with the given information 
-lines - required - at least 1 sku is required. 
-				   The sku of a given Product must already exist, and there must also be available inventory of that sku remaning
-				   sku - required - the sku of the product type to order
-				   quantity - required - the amount of this product type to order
-billingAddress - "same:true" can be used to indicate the same address information as shippingAddres (e.g. "billingAddress":{"same":"true"} )
-
-request:
-{
-	"shippingAddress" : {
-		"street" : "6th",
-		"city" : "Austin",
-		"state" : "Texas",
-		"zip" : "777777"
-	},
-	"billingAddress" : {
-		"same":"true"
-			OR
-		"street" : "6th",
-		"city" : "Austin",
-		"state" : "Texas",
-		"zip" : "777777"
-   	},
-	"lines" : [
-      {
-	      "sku":"hot dogs",
-	      "quantity":"10"
-      },
-      {
-	      "sku":"markers",
-	      "quantity":"5"
-      }
-  	]
-}
-
-response:{
-	id:order_id,
-	total: "$15.00",
-	"shippingAddress":{...},
-	"billingAddress":{...},
-	"lines":[{"price":...}]
-}
-'''
 @register('/order', method="POST",
 	notes='Create an order. Returns the id, total and price per sku; along with the given information <br>\
 lines - required - at least 1 sku is required. <br>\
@@ -195,6 +143,7 @@ def createOrder():
 	order.setShippingAndBillingAddress(shippingAddress, billingAddress, sameAddress)
 
 	#for each line item
+	publishList = []
 	for line in lines:
 		#validate line params
 		sku = line.get('sku')
@@ -221,6 +170,8 @@ def createOrder():
 		
 		#add price for response
 		line['price'] = helpers.convertIntToFormattedPrice( lineTotal )
+		#append to publish list
+		publishList.append(dict(id=productType.id, inventory=productType.inventory))
 
 	try:
 		db.session.commit()
@@ -228,26 +179,11 @@ def createOrder():
 	except exc.SQLAlchemyError as err:
 		return jsonify(error="Failed to create Order"), 400
 
+	#publish creation
+	helpers.publishCreateOrder("UPDATE_INVENTORY", publishList)
+
 	return jsonify(formatOrderForResponse(order, lines)), 201
 
-'''
-Update an orders shipping or billing address. Use the /order/<id>/lineItems endpoints to update the line items
-request:
-{
-	"shippingAddress" : {
-		"street" : "6th",
-		"city" : "Austin",
-		"state" : "Texas",
-		"zip" : "777777"
-	},
-	"billingAddress" : {
-		"street" : "6th",
-		"city" : "Austin",
-		"state" : "Texas",
-		"zip" : "777777"
-   	}
-}
-'''
 @register('/order', method="PUT",
 	notes = ' Update an orders shipping or billing address. Use the /order/<id>/lineItems endpoints to update the line items.<br>\
 request:<br>\
@@ -306,10 +242,7 @@ def updateOrder(id):
 	else:
 		return jsonify(error="Failed to find given Order"), 400
 
-'''
-delete an order:
-/order/id
-'''
+
 @register('/order/<id>', method="DELETE",
 	notes='Delete an order',
   parameters=[

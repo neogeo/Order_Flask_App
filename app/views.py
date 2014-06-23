@@ -6,17 +6,8 @@ from app import app
 from app import db, models, helpers
 
 
+
 @app.route('/')
-@app.route('/index')
-def index():
-    order = { 'total': '$1' }
-
-    return render_template("index.html",
-        order = order
-    )
-
-
-
 @app.route('/inventory')
 def inventory():
     return render_template("inventory.html")

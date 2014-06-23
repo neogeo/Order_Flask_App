@@ -1,4 +1,7 @@
 from decimal import Decimal
+from threading import Thread
+import requests
+import json
 
 ONEPLACE = Decimal(10)
 TWOPLACES = Decimal(10) ** -2
@@ -31,6 +34,27 @@ def convertIntToFormattedPrice(intPriceInCents):
 	#format
 	return "$"+str(dec)
 
+#publish an update to the faye server
+def publishUpdate(msg, productType):
+	thread = Thread(target = publish, args = (msg, productType))
+	thread.start()
+
+#publish the creation of an order. send a message for each product type inventory that was updated
+#products - a list of id, inventory tuples
+def publishCreateOrder(msg, products):
+	for product in products:
+		publishUpdate(msg, product)
+
+def publish(msg, productType):
+	url = "http://neogeo098.webfactional.com/faye"
+	
+	message = dict(
+	  channel = "/productType", 
+	  data = dict( msg = msg, productType = productType )
+	)
+
+	headers = {'content-type': 'application/json'}
+	r = requests.post(url, data=json.dumps(message), headers=headers)
 
 
 #UNIT TESTS

@@ -6,27 +6,7 @@ from app import app
 from app import db, models, helpers, order_api, product_type_api
 from flask_sillywalk import SwaggerApiRegistry, ApiParameter, ApiErrorResponse
 from app import register
-'''
-Add lineItems to an existing order. If the line item already exists, then it is ignored (use /order/id/lineItems PUT to upate a line items quantity)
-There must also be enough inventory to add the line item
-lines - required - at least 1 sku is required. 
-				   The sku of a given Product must already exist, and there must also be available inventory of that sku remaning
-				   sku - required - the sku of the product type to order
-				   quantity - required - the amount of this product type to order
-request:
-{
-	"lines" : [
-      {
-	      "sku":"hot dogs",
-	      "quantity":"10"
-      },
-      {
-	      "sku":"markers",
-	      "quantity":"5"
-      }
-  	]
-}
-'''
+
 @register('/order/<id>/lineItems', method="POST",
 	notes='Add lineItems to an existing order. If the line item already exists, then it is ignored (use /order/id/lineItems PUT to upate a line items quantity)<br>\
 There must also be enough inventory to add the line item<br>\
@@ -125,27 +105,6 @@ def createProductsForOrder(id):
 		return jsonify(error="Failed to find given Order"), 400
 
 
-'''
-Update the quantities of line items on an order. If the line item does not exist, then it is ignored.
-There must also be enough inventory of a line item
-lines - required - 
-				   The sku of a given Product must already exist, and there must also be available inventory of that sku remaning
-				   sku - required - the sku of the product type to order
-				   quantity - required - the new amount of the line item. If set to less than 1, it is ignored (use order/<id>/removeLineItems to remove line items)
-request:
-{
-	"lines" : [
-      {
-	      "sku":"hot dogs",
-	      "quantity":"10"
-      },
-      {
-	      "sku":"markers",
-	      "quantity":"6"
-      }
-  	]
-}
-'''
 @register('/order/<id>/lineItems', method="PUT",
 	notes='Update the quantities of line items on an order. If the line item does not exist, then it is ignored.<br>\
 There must also be enough inventory of a line item<br>\
@@ -240,23 +199,6 @@ def updateProductsFromOrder(id):
 	else:
 		return jsonify(error="Failed to find given Order"), 400
 
-'''
-Remove lineItems from an existing order. If the line item does not exist, then it is ignored 
-lines - required - 
-				   The sku of a given Product must already exist, and there must also be available inventory of that sku remaning
-				   sku - required - the sku of the product type to order
-request:
-{
-	"lines" : [
-      {
-	      "sku":"hot dogs"
-      },
-      {
-	      "sku":"markers"
-      }
-  	]
-}
-'''
 @register('/order/<id>/removeLineItems', method="DELETE",
 	notes='Remove lineItems from an existing order. If the line item does not exist, then it is ignored <br>\
 lines - required - <br>\
