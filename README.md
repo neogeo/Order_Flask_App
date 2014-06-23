@@ -16,7 +16,8 @@ Features:
 
 1. INSTALL
 -----------------
-```pip install Flask
+```
+pip install Flask
 pip install SQLAlchemy
 pip install flask-sqlalchemy
 pip install requests
@@ -25,7 +26,9 @@ python flask-sillywalk/setup.py install
 
 * copy flask-sillywalk/flask_sillywalk.py to the python path
 * For example 
-```cp flask-sillwalk/setup.py ../virtual_env/lib/python2.7/site-packages```
+```
+cp flask-sillwalk/setup.py ../virtual_env/lib/python2.7/site-packages
+```
 
 2. CREATE DATABASE
 -----------------
